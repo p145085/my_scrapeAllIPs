@@ -13,16 +13,14 @@ namespace my_scrapeAllIPs
 
         static void Main(string[] args)
         {
-            // Configure the list of IP addresses to scrape
-            List<string> usedIPs = new List<string>();
-            List<string> nonPingable = new List<string>();
-            int first = 0;
-            int second = 0;
-            int third = 0;
-            int fourth = 0;
-            // Set the directory where the text files will be saved
-            string saveDirectory = "D:\\emiltempscraping";
+            // ** -- Declaration of variables -- ** //
+            List<string> usedIPs = new List<string>(); // To be filled with IP's checked.
+            List<string> nonPingable = new List<string>(); // Save the IP's that aren't pingable.
             Random random = new Random();
+
+            // ** -- Configuration -- ** //
+            // Set the directory where the text files will be saved.
+            string saveDirectory = "D:\\emiltempscraping";
 
             string GetRandomIPAddress()
             {
@@ -32,10 +30,8 @@ namespace my_scrapeAllIPs
                 int fourth = random.Next(0, 255);
                 return $"{first}.{second}.{third}.{fourth}";
             }
-            // Set a variable to use for our operations.
-            string current = GetRandomIPAddress();
-            Console.WriteLine(current);
 
+            // ** -- Method Declaration(s) -- ** //
             // Method to check if a submitted IP exists in our 'used' List.
             bool IsIPUsed(string ip)
             {
@@ -61,26 +57,27 @@ namespace my_scrapeAllIPs
                         {
                             if (!IsIPUsed(ip)) // Is the IP already used?
                             {
-                                string url = "http://" + ip + ":80";
-                                PingReply reply = ping.Send(ip, 5000);
-                                if (reply.Status == IPStatus.Success)
+                                string url = "http://" + ip + ":80"; // Define the address.
+                                PingReply reply = ping.Send(ip, 5000); // Try to send a 'Ping'.
+                                if (reply.Status == IPStatus.Success) 
                                 {
-                                    // IP address is pingable, so download the data
+                                    // IP address is pingable, so download the data.
                                     try
                                     {
-                                        string theData = client.DownloadString("http://" + ip + ":80");
+                                        string theData = client.DownloadString(url);
                                         return theData;
                                     }
                                     catch (WebException ex)
                                     {
                                         if (ex.Status == WebExceptionStatus.Timeout)
                                         {
+                                            // 'Ping' took too long to respond.
                                             Console.WriteLine("Connection timed out!");
                                             return null;
                                         }
                                         else
                                         {
-                                            // Some other error occurred
+                                            // Some other error occurred.
                                             Console.WriteLine(ex);
                                             return null;
                                         }
@@ -88,12 +85,14 @@ namespace my_scrapeAllIPs
                                 }
                                 else
                                 {
-                                    // IP address is not pingable
+                                    // IP address is not pingable.
                                     nonPingable.Add(ip);
                                     return null;
                                 }
-                            } else
+                            }
+                            else 
                             {
+                                // The IP was in the 'usedIPs' list.
                                 return null;
                             }
                         }
@@ -109,26 +108,17 @@ namespace my_scrapeAllIPs
                 }
             }
 
-            string dataFound = GetWebPageData(current);
-
-            if (dataFound != null)
+            // ** -- Program / Application / Running process -- ** //
+            // Set a variable to use for our operations.
+            string current = GetRandomIPAddress();
+            Console.WriteLine(current);
+            string data = GetWebPageData(current);
+            if (data != null)
             {
-                SaveToTextFile(dataFound, saveDirectory, current);
+                // Some data was found, save it to a text file.
+                SaveToTextFile(data, saveDirectory, current);
             }
-
-            // Don't add IP to list until we're done.
             usedIPs.Add(current);
-
-            //foreach (string ip in ips_list)
-            //{
-            //    // Retrieve the web page data
-            //    string data = GetWebPageData(ip);
-            //    // Save the data to a text file
-            //    if (data != null)
-            //    {
-            //        SaveToTextFile(data, saveDirectory, ip);
-            //    }
-            //}
         }
     }
 }
