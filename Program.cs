@@ -1,5 +1,6 @@
 ﻿using System.Net.NetworkInformation;
 using System.Net;
+using System.Net.Sockets;
 
 namespace my_scrapeAllIPs
 {
@@ -108,16 +109,60 @@ namespace my_scrapeAllIPs
                 }
             }
 
+            static bool IsPortOpen(string ip, int port)
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    try
+                    {
+                        client.Connect(ip, port);
+                        return true;
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                    }
+                }
+            }
+
             // ** -- Program / Application / Running process -- ** //
             // Set a variable to use for our operations.
             string current = GetRandomIPAddress();
             Console.WriteLine(current);
+
+            // We want to get to know the host, what's happening there? Let's scan some ports.
+            // Ports range from 0 to 65536.
+            int[] ports = { 21, 22, 80, 443 }; // Can define a selection of popular ports.
+            for (int i = 0; i <= 65536; i++) { } // Can also search all of the ports.
+            foreach (int port in ports)
+            {
+                if (IsPortOpen(current, port))
+                {
+                    if (port == 21)
+                    {
+                        Console.WriteLine($"Port {port} is commonly used for FTP.");
+                    }
+                    else if (port == 22)
+                    {
+                        Console.WriteLine($"Port {port} is commonly used for SSH.");
+                    }
+                    Console.WriteLine($"Port {port} is open.");
+                }
+                else
+                {
+                    Console.WriteLine($"Port {port} is closed.");
+                }
+            }
+
+            // Retrieve the data at the current address.
             string data = GetWebPageData(current);
             if (data != null)
             {
                 // Some data was found, save it to a text file.
                 SaveToTextFile(data, saveDirectory, current);
             }
+
+            // Final statement.
             usedIPs.Add(current);
         }
     }
