@@ -22,8 +22,9 @@ namespace my_scrapeAllIPs
             List<int> openPorts = new List<int>(); // Store open ports from IP. Gets nulled every cycle.
 
             // ** -- Configuration -- ** //
-            // Set the directory where the text files will be saved.
-            string saveDirectory = "D:\\emiltempscraping";
+            string saveDirectory = "D:\\emiltempscraping"; // Configure where to save text files.
+            int runs = 1000; // Configure how many iterations you would like to run.
+
 
             string GetRandomIPAddress()
             {
@@ -128,89 +129,94 @@ namespace my_scrapeAllIPs
             }
 
             // ** -- Program / Application / Running process -- ** //
-            // Set a variable to use for our operations.
-            string current = GetRandomIPAddress();
-            Console.WriteLine(current);
-
-            // We want to get to know the host, what's happening there? Let's scan some ports.
-            // Ports range from 0 to 65536.
-            int[] stdPorts = { 21, 22, 80, 194, 443 };
-            int[] funPorts = { 666, 1119 };
-            //for (int i = 0; i <= 65536; i++) { } // Can also search all of the ports.
-            foreach (int port in stdPorts)
+            for (int r = 0; r < runs; r++) // Let's try to run 10 times.
             {
-                try
+                string current = GetRandomIPAddress();
+                Console.WriteLine(current);
+
+                // We want to get to know the host, what's happening there? Let's scan some ports.
+                // Ports range from 0 to 65536.
+                int[] stdPorts = { 21, 22, 80, 194, 443 };
+                int[] funPorts = { 666, 1119 };
+                //for (int i = 0; i <= 65536; i++) { } // Can also search all of the ports.
+                foreach (int port in stdPorts)
+                {
+                    try
+                    {
+                        if (IsPortOpen(current, port))
+                        {
+                            Console.WriteLine($"Port {port} is open.");
+                            openPorts.Add(port);
+                            if (port == 21)
+                            {
+                                Console.WriteLine($"Port {port} is commonly used for FTP.");
+                            }
+                            else if (port == 22)
+                            {
+                                Console.WriteLine($"Port {port} is commonly used for SSH.");
+                            }
+                            else if (port == 80)
+                            {
+                                Console.WriteLine($"Port {port} is commonly used for HTTP.");
+                            }
+                            else if (port == 194)
+                            {
+                                Console.WriteLine($"Port {port} is commonly used for IRC.");
+                            }
+                            else if (port == 443)
+                            {
+                                Console.WriteLine($"Port {port} is commonly used for HTTPS.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Port {port} is closed.");
+                        }
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+                foreach (int port in funPorts)
                 {
                     if (IsPortOpen(current, port))
                     {
                         Console.WriteLine($"Port {port} is open.");
                         openPorts.Add(port);
-                        if (port == 21)
+                        if (port == 666)
                         {
-                            Console.WriteLine($"Port {port} is commonly used for FTP.");
+                            Console.WriteLine($"Port {port} is commonly used for DOOM.");
                         }
-                        else if (port == 22)
+                        else if (port == 1119)
                         {
-                            Console.WriteLine($"Port {port} is commonly used for SSH.");
-                        }
-                        else if (port == 80)
-                        {
-                            Console.WriteLine($"Port {port} is commonly used for HTTP.");
-                        }
-                        else if (port == 194)
-                        {
-                            Console.WriteLine($"Port {port} is commonly used for IRC.");
-                        }
-                        else if (port == 443)
-                        {
-                            Console.WriteLine($"Port {port} is commonly used for HTTPS.");
+                            Console.WriteLine($"Port {port} is commonly used for Battle.net.");
                         }
                     }
                     else
                     {
                         Console.WriteLine($"Port {port} is closed.");
                     }
-                } catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
                 }
-            }
-            foreach (int port in funPorts)
-            {
-                if (IsPortOpen(current, port))
+                if (openPorts.Count > 0) // If any open ports were found, log them.
                 {
-                    Console.WriteLine($"Port {port} is open.");
-                    openPorts.Add(port);
-                    if (port == 666)
+                    string thePorts = string.Join(", ", openPorts.Select(x => x.ToString()));
+                    SaveToTextFile(thePorts, saveDirectory, current + "_ports");
+
+                    if (openPorts.Contains(80)) // If port "80" was open, let's retrieve the data.
                     {
-                        Console.WriteLine($"Port {port} is commonly used for DOOM.");
-                    }
-                    else if (port == 1119)
-                    {
-                        Console.WriteLine($"Port {port} is commonly used for Battle.net.");
+                        string data = GetHTTP80Data(current);
+                        if (data != null)
+                        {
+                            // Some data was found, save it to a text file.
+                            SaveToTextFile(data, saveDirectory, current);
+                        }
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"Port {port} is closed.");
-                }
-            }
-            string thePorts = string.Join(", ", openPorts.Select(x => x.ToString()));
-            SaveToTextFile(thePorts, saveDirectory, current + "_ports");
 
-            if (openPorts.Contains(80)) // If port "80" was open, let's retrieve the data.
-            {
-                string data = GetHTTP80Data(current);
-                if (data != null)
-                {
-                    // Some data was found, save it to a text file.
-                    SaveToTextFile(data, saveDirectory, current);
-                }
+                // Final statement(s).
+                openPorts.Clear();
+                usedIPs.Add(current);
             }
-
-            // Final statement(s).
-            openPorts.Clear();
-            usedIPs.Add(current);
         }
     }
 }
