@@ -1,6 +1,7 @@
 ﻿using System.Net.NetworkInformation;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
 namespace my_scrapeAllIPs
 {
@@ -18,6 +19,7 @@ namespace my_scrapeAllIPs
             List<string> usedIPs = new List<string>(); // To be filled with IP's checked.
             List<string> nonPingable = new List<string>(); // Save the IP's that aren't pingable.
             Random random = new Random();
+            List<int> openPorts = new List<int>(); // Store open ports from IP. Gets nulled every cycle.
 
             // ** -- Configuration -- ** //
             // Set the directory where the text files will be saved.
@@ -48,7 +50,7 @@ namespace my_scrapeAllIPs
                 File.WriteAllText(filePath, data);
             }
 
-            string GetWebPageData(string ip)
+            string GetHTTP80Data(string ip)
             {
                 using (WebClient client = new WebClient())
                 {
@@ -132,37 +134,82 @@ namespace my_scrapeAllIPs
 
             // We want to get to know the host, what's happening there? Let's scan some ports.
             // Ports range from 0 to 65536.
-            int[] ports = { 21, 22, 80, 443 }; // Can define a selection of popular ports.
-            for (int i = 0; i <= 65536; i++) { } // Can also search all of the ports.
-            foreach (int port in ports)
+            int[] stdPorts = { 21, 22, 80, 194, 443 };
+            int[] funPorts = { 666, 1119 };
+            //for (int i = 0; i <= 65536; i++) { } // Can also search all of the ports.
+            foreach (int port in stdPorts)
+            {
+                try
+                {
+                    if (IsPortOpen(current, port))
+                    {
+                        Console.WriteLine($"Port {port} is open.");
+                        openPorts.Add(port);
+                        if (port == 21)
+                        {
+                            Console.WriteLine($"Port {port} is commonly used for FTP.");
+                        }
+                        else if (port == 22)
+                        {
+                            Console.WriteLine($"Port {port} is commonly used for SSH.");
+                        }
+                        else if (port == 80)
+                        {
+                            Console.WriteLine($"Port {port} is commonly used for HTTP.");
+                        }
+                        else if (port == 194)
+                        {
+                            Console.WriteLine($"Port {port} is commonly used for IRC.");
+                        }
+                        else if (port == 443)
+                        {
+                            Console.WriteLine($"Port {port} is commonly used for HTTPS.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Port {port} is closed.");
+                    }
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
+            foreach (int port in funPorts)
             {
                 if (IsPortOpen(current, port))
                 {
-                    if (port == 21)
-                    {
-                        Console.WriteLine($"Port {port} is commonly used for FTP.");
-                    }
-                    else if (port == 22)
-                    {
-                        Console.WriteLine($"Port {port} is commonly used for SSH.");
-                    }
                     Console.WriteLine($"Port {port} is open.");
+                    openPorts.Add(port);
+                    if (port == 666)
+                    {
+                        Console.WriteLine($"Port {port} is commonly used for DOOM.");
+                    }
+                    else if (port == 1119)
+                    {
+                        Console.WriteLine($"Port {port} is commonly used for Battle.net.");
+                    }
                 }
                 else
                 {
                     Console.WriteLine($"Port {port} is closed.");
                 }
             }
+            string thePorts = string.Join(", ", openPorts.Select(x => x.ToString()));
+            SaveToTextFile(thePorts, saveDirectory, current + "_ports");
 
-            // Retrieve the data at the current address.
-            string data = GetWebPageData(current);
-            if (data != null)
+            if (openPorts.Contains(80)) // If port "80" was open, let's retrieve the data.
             {
-                // Some data was found, save it to a text file.
-                SaveToTextFile(data, saveDirectory, current);
+                string data = GetHTTP80Data(current);
+                if (data != null)
+                {
+                    // Some data was found, save it to a text file.
+                    SaveToTextFile(data, saveDirectory, current);
+                }
             }
 
-            // Final statement.
+            // Final statement(s).
+            openPorts.Clear();
             usedIPs.Add(current);
         }
     }
